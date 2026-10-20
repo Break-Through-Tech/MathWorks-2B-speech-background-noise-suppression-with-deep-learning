@@ -6,3 +6,8 @@ data/processed/
 
 # Python cache
 __pycache__/
+
+DNS-Challenge/
+runs/
+__pycache__/
+.venv/
