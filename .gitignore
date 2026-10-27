@@ -6,3 +6,6 @@ data/processed/
 
 # Python cache
 __pycache__/
+
+# model checkpoints (src/compare/train.py) - results worth keeping go to results/
+runs/
