@@ -1,0 +1,4 @@
+run,model,params,best_epoch,train_min,val_snr_gain,val_pesq,test_snr_in,test_snr_out,test_snr_gain,test_pct_snr_worse,test_pesq_in,test_pesq_out,test_pesq_gain,test_stoi_in,test_stoi_out,selected
+dnn,dnn,1136897,41,9.2,6.33,2.075,4.66,7.12,2.46,34,1.666,1.589,-0.077,0.744,0.608,
+cnn,cnn,303713,47,207.9,8.41,2.384,4.66,10.96,6.3,14,1.666,2.055,0.389,0.744,0.735,yes
+lstm,lstm,1119745,27,9.3,6.57,2.125,4.66,8.59,3.93,34,1.666,1.999,0.334,0.744,0.722,
