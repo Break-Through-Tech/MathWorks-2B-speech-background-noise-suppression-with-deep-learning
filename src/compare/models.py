@@ -131,7 +131,53 @@ class LSTMDenoiser(MaskModel):
         return self.head(h).transpose(1, 2)
 
 
-MODELS = {"dnn": DNNDenoiser, "cnn": CNNDenoiser, "lstm": LSTMDenoiser}
+class CRNDenoiser(MaskModel):
+    """CNN + LSTM together (a Convolutional Recurrent Network, Tan & Wang 2018).
+
+    Encoder: 5 conv layers, each halving FREQUENCY only (257->129->65->33->17->9) so every
+             time frame is kept - the CNN part learns local time-frequency patterns.
+    Middle:  an LSTM reads the encoded frames left to right - the memory part.
+    Decoder: transposed convs grow frequency back to 257, with U-Net style skip connections.
+    """
+
+    def __init__(self, channels=(16, 32, 32, 64, 64), hidden=256, layers=2, dropout=0.2, mask_floor=0.0):
+        super().__init__(mask_floor)
+        chs = [1, *channels]
+        self.enc = nn.ModuleList([
+            nn.Sequential(nn.Conv2d(chs[i], chs[i + 1], 3, stride=(2, 1), padding=1),
+                          nn.BatchNorm2d(chs[i + 1]), nn.ELU())
+            for i in range(len(channels))])
+        f = N_FREQ
+        for _ in channels:
+            f = (f + 1) // 2                                   # 257 -> ... -> 9
+        self.f_bottom = f
+        feat = channels[-1] * f
+        self.lstm = nn.LSTM(feat, hidden, num_layers=layers, batch_first=True,
+                            dropout=dropout if layers > 1 else 0.0)
+        self.proj = nn.Linear(hidden, feat)
+        dec = []
+        for i in range(len(channels), 0, -1):                  # mirror of the encoder
+            cin, cout = chs[i] * 2, chs[i - 1] if i > 1 else 8
+            dec.append(nn.Sequential(nn.ConvTranspose2d(cin, cout, 3, stride=(2, 1), padding=1),
+                                     nn.BatchNorm2d(cout), nn.ELU()))
+        self.dec = nn.ModuleList(dec)
+        self.out = nn.Conv2d(8, 1, 1)
+
+    def net_forward(self, x):                     # x: (B, 257, T)
+        h = x.unsqueeze(1)                        # (B, 1, 257, T)
+        skips = []
+        for layer in self.enc:
+            h = layer(h)
+            skips.append(h)
+        B, C, Fb, T = h.shape
+        z, _ = self.lstm(h.permute(0, 3, 1, 2).reshape(B, T, C * Fb))
+        h = self.proj(z).reshape(B, T, C, Fb).permute(0, 2, 3, 1)
+        for layer, skip in zip(self.dec, reversed(skips)):
+            h = layer(torch.cat([h, skip], 1))
+        return self.out(h)[:, 0]                  # (B, 257, T)
+
+
+MODELS = {"dnn": DNNDenoiser, "cnn": CNNDenoiser, "lstm": LSTMDenoiser, "crn": CRNDenoiser}
 
 
 def build_model(name, mask_floor=0.0, **arch):

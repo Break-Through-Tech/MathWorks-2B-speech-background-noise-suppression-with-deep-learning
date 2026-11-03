@@ -18,7 +18,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 RESULTS = "results/model_comparison"
-COLORS = {"dnn": "#8a8a8a", "cnn": "#2a6fdb", "lstm": "#d9822b"}
+COLORS = {"dnn": "#8a8a8a", "cnn": "#2a6fdb", "lstm": "#d9822b", "crn": "#2e9e6a"}
 
 
 def load_run(run):
@@ -59,7 +59,7 @@ def table_rows(runs, winner):
 
 
 def color(r):
-    return COLORS.get(r["run"], None) or COLORS.get(r["config"]["model"], None)
+    return COLORS.get(r["run"])          # fixed colours for the 4 base runs; others use the default cycle
 
 
 def plot_by_level(runs, out_prefix, split="test"):
@@ -70,7 +70,7 @@ def plot_by_level(runs, out_prefix, split="test"):
         for i, r in enumerate(runs):
             vals = [r[split]["by_snr_level"][lv][key] for lv in levels]
             xs = [j + (i - (len(runs) - 1) / 2) * width for j in range(len(levels))]
-            ax.bar(xs, vals, width, label=r["run"], color=color(r) if len(runs) <= 3 else None)
+            ax.bar(xs, vals, width, label=r["run"], color=color(r) if len(runs) <= 4 else None)
         ax.axhline(0, color="black", lw=0.8)
         ax.set_xticks(range(len(levels)))
         ax.set_xticklabels([f"{lv} dB" for lv in levels])
@@ -89,7 +89,7 @@ def plot_curves(runs, out_prefix):
     for r in runs:
         ep = [int(h["epoch"]) for h in r["history"]]
         ax.plot(ep, [float(h["val_loss"]) for h in r["history"]], label=f"{r['run']} val",
-                color=color(r) if len(runs) <= 3 else None)
+                color=color(r) if len(runs) <= 4 else None)
         ax.plot(ep, [float(h["train_loss"]) for h in r["history"]], ls="--", alpha=0.5,
                 color=ax.lines[-1].get_color())
     ax.set_xlabel("epoch"); ax.set_ylabel("loss (solid = val, dashed = train)")
