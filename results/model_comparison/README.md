@@ -31,7 +31,20 @@ The CNN won on validation (SNR +8.4 dB, PESQ 1.63 → 2.38) and also came out be
 - `<model>/{val,test}_per_clip.csv`: scores for every clip
 - `<model>/denoised_wavs/`: the first 5 test clips after denoising. Compare them with `data/processed/test/noisy` and `/clean`.
 
-## Next (tuning the CNN, one setting at a time)
+## Tuning round 1: mask floor (`tuning_cnn.md`)
 
-- `cnn_floor0.1`: mask floor 0.1 (never mute a bin by more than 20 dB), aimed at the over-suppression on clean clips
-- Then batch size (8 → 16) and LR, as the CA suggested, preferably on a Colab GPU
+`cnn_floor0.1` is the same CNN and recipe with one change: the mask can never go below 0.1, so no frequency bin is muted by more than 20 dB. This was aimed at the over-suppression on clean clips.
+
+| | val PESQ | test SNR change | test PESQ | test STOI | test SNR change on 15 dB clips |
+|---|---|---|---|---|---|
+| cnn (floor 0) | **2.384** | +6.30 dB | 1.67 → 2.06 | 0.744 → 0.735 | −0.78 dB |
+| cnn_floor0.1 | 2.357 | **+6.39 dB** | 1.67 → **2.20** | 0.744 → **0.751** | **+0.17 dB** |
+
+- **On test, the floor helps clearly.** PESQ gains 0.53 instead of 0.39, STOI now goes up instead of down, and the average SNR improves at every input level, so the CA's rule is met even on the cleanest clips. The cost is a little less cleanup on the very noisiest clips (+13.7 dB instead of +15.4 dB at −5 dB input).
+- **On validation it is a near-tie.** It is 0.03 PESQ lower, which is within the noise you'd expect with only 6 validation speakers, so our pre-set rule technically keeps floor 0.
+- **Recommendation:** use floor 0.1 as the default going forward, but confirm it before calling it final. The cleanest check is cross-validation over speakers, or a larger validation split, ideally on a Colab GPU.
+
+## Next
+
+- Confirm the mask floor result with more validation speakers.
+- Batch size (8 → 16) and LR, as the CA suggested, preferably on a Colab GPU, where the CNN trains in minutes instead of hours.

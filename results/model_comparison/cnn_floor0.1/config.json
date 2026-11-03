@@ -1,0 +1,29 @@
+{
+ "run": "cnn_floor0.1",
+ "model": "cnn",
+ "arch": {},
+ "n_params": 303713,
+ "best_epoch": 57,
+ "epochs_run": 60,
+ "best_val_loss": 0.013054086286574602,
+ "train_minutes": 224.0,
+ "shared": {
+  "feat_dir": "data/processed/features",
+  "data_dir": "data/processed",
+  "runs_dir": "runs/compare",
+  "sr": 16000,
+  "optimizer": "adam",
+  "lr": 0.001,
+  "lr_decay_factor": 0.5,
+  "lr_decay_patience": 3,
+  "batch_size": 8,
+  "max_epochs": 60,
+  "early_stop_patience": 8,
+  "grad_clip": 5.0,
+  "loss": "compressed_mse",
+  "compress_power": 0.3,
+  "mask_floor": 0.1,
+  "seed": 42,
+  "num_train_clips": 500
+ }
+}
